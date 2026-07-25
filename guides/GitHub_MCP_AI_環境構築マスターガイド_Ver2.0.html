@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>GitHub・MCP・AI環境構築マスターガイド Ver.2.0</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;margin:40px;max-width:1000px}
+h1,h2{color:#184a8b}
+code{background:#f4f4f4;padding:2px 4px}
+pre{background:#f7f7f7;padding:12px;border-left:4px solid #184a8b;overflow:auto}
+table{border-collapse:collapse;width:100%}
+td,th{border:1px solid #ccc;padding:8px}
+.note{background:#eef7ff;padding:12px;border-left:5px solid #3b82f6}
+.warn{background:#fff8e6;padding:12px;border-left:5px solid #f59e0b}
+</style>
+</head>
+<body>
+<h1>GitHub・MCP・AI環境構築マスターガイド Ver.2.0</h1>
+<p><strong>更新日:</strong> 2026-07-25</p>
+
+<h2>目的</h2>
+<p>VS Code・GitHub・GitHub MCP Server・Claude Code・ChatGPTを連携し、
+AIを活用した開発・知識管理・ライフOS基盤を構築する。</p>
+
+<h2>全体構成</h2>
+<pre>
+ChatGPT
+   │
+   ├─ Gmail / Google Calendar / Google Drive
+   │
+   ├─ GitHub
+   │      │
+   │      └─ GitHub MCP Server
+   │               │
+   │         Claude Code
+   │               │
+   └───────── VS Code
+</pre>
+
+<h2>STEP1 VS Code</h2>
+<ul>
+<li>最新版をインストール</li>
+<li>Gitをインストール</li>
+<li>GitHubへサインイン</li>
+</ul>
+
+<h2>STEP2 GitHubリポジトリ</h2>
+<ul>
+<li>ライフOS用リポジトリ作成</li>
+<li>README作成</li>
+<li>VS CodeからClone</li>
+</ul>
+
+<h2>STEP3 GitHub MCP Server（最新版）</h2>
+<div class="note">
+<p><strong>アップデート:</strong> GitHub公式ではOAuth認証を利用できる環境では、
+PATよりOAuthが推奨される構成が増えています。PATが必要な環境では従来どおりPersonal Access Tokenを利用します。</p>
+</div>
+
+<table>
+<tr><th>方式</th><th>推奨</th><th>用途</th></tr>
+<tr><td>OAuth</td><td>★★★★★</td><td>対応環境で第一候補</td></tr>
+<tr><td>PAT</td><td>★★★★☆</td><td>互換性重視・従来構成</td></tr>
+</table>
+
+<h3>OAuthの場合</h3>
+<ol>
+<li>GitHub MCP Serverを追加</li>
+<li>Sign in with GitHub</li>
+<li>ブラウザ認証</li>
+<li>接続確認</li>
+</ol>
+
+<h3>PATの場合</h3>
+<ol>
+<li>GitHub → Settings → Developer settings</li>
+<li>Personal Access Tokenを作成</li>
+<li>必要最小限の権限を付与</li>
+<li>MCP設定へ登録</li>
+</ol>
+
+<h2>STEP4 Claude Code</h2>
+<ul>
+<li>最新版へ更新</li>
+<li>MCPサーバー認識確認</li>
+<li>GitHubリポジトリへアクセスできることを確認</li>
+</ul>
+
+<h2>STEP5 ChatGPT</h2>
+<ul>
+<li>GitHub連携</li>
+<li>Google Workspace連携</li>
+<li>必要に応じてOutlook連携</li>
+</ul>
+
+<h2>役割分担</h2>
+<table>
+<tr><th>ツール</th><th>主担当</th></tr>
+<tr><td>ChatGPT</td><td>戦略・設計・レビュー・企画</td></tr>
+<tr><td>Claude Code</td><td>実装・コード生成・リファクタリング</td></tr>
+<tr><td>GitHub</td><td>コード・知識管理・履歴</td></tr>
+<tr><td>MCP</td><td>AIと外部サービスの接続</td></tr>
+<tr><td>VS Code</td><td>開発環境</td></tr>
+</table>
+
+<h2>チェックリスト</h2>
+<ul>
+<li>☐ VS Code</li>
+<li>☐ GitHub接続</li>
+<li>☐ Git Clone</li>
+<li>☐ GitHub MCP Server</li>
+<li>☐ OAuthまたはPAT認証</li>
+<li>☐ Claude Code</li>
+<li>☐ ChatGPT連携</li>
+<li>☐ 動作確認</li>
+</ul>
+
+<h2>トラブルシューティング</h2>
+<ul>
+<li>認証エラー→再ログインまたはトークン有効期限確認</li>
+<li>MCPが表示されない→拡張機能・設定を再確認</li>
+<li>GitHubへ接続不可→ネットワーク・認可状態を確認</li>
+</ul>
+
+<div class="warn">
+<h2>今後のアップデート候補</h2>
+<ul>
+<li>GitHub Actions</li>
+<li>Codex</li>
+<li>Power BI / Power Automate</li>
+<li>NotebookLM</li>
+<li>ライフOS全体アーキテクチャ</li>
+</ul>
+</div>
+</body>
+</html>
