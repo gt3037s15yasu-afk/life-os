@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0C">
+<title>LC500h 購入判断ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* =========================================================
+   LC500h Decision Dashboard
+   Palette: graphite base / champagne gold accent
+   Semantics: green=良い  amber=注意  red=危険  gold=情報
+   ========================================================= */
+:root{
+  color-scheme: dark;
+
+  /* --- Elevation ladder (背景 → カード → 内側 → ボタン) --- */
+  --bg:            #07070a;
+  --bg-elevated:   #0f0f14;
+  --card:          #1c1c25;
+  --card-hover:    #232330;
+  --inset:         #2b2b37;
+  --inset-2:       #343441;
+  --control:       #383846;
+  --control-hover: #434352;
+
+  --border:        #41414f;
+  --border-strong: #5a5a6b;
+  --hairline:      #343441;
+
+  /* --- Type --- */
+  --text:       #f5f4f0;
+  --text-2:     #bcbab2;
+  --text-3:     #8d8b83;
+
+  /* --- Semantic --- */
+  --gold:       #d8bd83;   /* 情報・ブランド */
+  --gold-bright:#ecd7a6;
+  --gold-dim:   rgba(216,189,131,0.14);
+  --gold-line:  rgba(216,189,131,0.38);
+
+  --good:       #63c48a;   /* 良い */
+  --good-dim:   rgba(99,196,138,0.14);
+  --good-line:  rgba(99,196,138,0.40);
+
+  --warn:       #e8b54a;   /* 注意 */
+  --warn-dim:   rgba(232,181,74,0.14);
+  --warn-line:  rgba(232,181,74,0.40);
+
+  --bad:        #e8705c;   /* 危険 */
+  --bad-dim:    rgba(232,112,92,0.14);
+  --bad-line:   rgba(232,112,92,0.40);
+
+  --neutral:    #7c7a73;
+
+  /* --- Space --- */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:22px;
+  --s6:28px; --s7:36px; --s8:48px; --s9:64px;
+
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:26px; --r-full:999px;
+
+  --font: 'Inter','Noto Sans JP',-apple-system,BlinkMacSystemFont,sans-serif;
+
+  --ease: cubic-bezier(0.16,1,0.3,1);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.5), 0 8px 28px rgba(0,0,0,0.32);
+  --shadow-hero: 0 2px 4px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.45);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{
+  min-height:100dvh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  font-size:16px;
+  line-height:1.7;
+  font-weight:400;
+  letter-spacing:0.01em;
+  -webkit-tap-highlight-color:transparent;
+  overflow-x:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-appearance:none;}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px;}
+::selection{background:var(--gold-dim);color:var(--text);}
+
+/* 数値: タブラー figures で桁ブレを防ぐ */
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:-0.02em;}
+
+/* =========================================================
+   Layout
+   ========================================================= */
+.wrap{max-width:820px;margin:0 auto;padding:0 var(--s4) var(--s9);}
+@media (min-width:600px){ .wrap{padding:0 var(--s6) var(--s9);} }
+
+.stack > * + *{margin-top:var(--s6);}
+
+/* =========================================================
+   Header
+   ========================================================= */
+.topbar{
+  position:sticky;top:0;z-index:80;
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  padding:calc(env(safe-area-inset-top) + 12px) var(--s4) 12px;
+  background:rgba(10,10,12,0.82);
+  backdrop-filter:saturate(150%) blur(20px);
+  -webkit-backdrop-filter:saturate(150%) blur(20px);
+  border-bottom:1px solid var(--hairline);
+}
+.topbar-id{display:flex;align-items:baseline;gap:var(--s2);min-width:0;}
+.topbar-mark{font-size:13px;font-weight:700;letter-spacing:0.16em;color:var(--gold);text-transform:uppercase;}
+.topbar-model{font-size:13px;font-weight:500;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.topbar-pill{
+  display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  padding:5px 12px;border-radius:var(--r-full);
+  font-size:12px;font-weight:700;letter-spacing:0.02em;
+  border:1px solid var(--border);background:var(--inset);color:var(--text-2);
+  transition:all 300ms var(--ease);
+}
+.topbar-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+
+/* =========================================================
+   Section framing
+   ========================================================= */
+.sec-head{margin-bottom:var(--s4);padding:0 var(--s1);}
+.sec-eyebrow{
+  font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:var(--s2);
+}
+.sec-head h2{font-size:21px;font-weight:700;letter-spacing:-0.01em;line-height:1.35;color:var(--text);}
+.sec-head p{font-size:13.5px;color:var(--text-3);margin-top:4px;line-height:1.6;}
+
+/* =========================================================
+   Card system  (3段階の明度差で階層を明示)
+   ========================================================= */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:var(--s5);
+  box-shadow:var(--shadow-card);
+}
+.card--tight{padding:var(--s4);}
+.card--gold{
+  border-color:var(--gold-line);
+  background:linear-gradient(168deg,#201d17 0%,#191920 62%);
+}
+.card--flat{background:var(--bg-elevated);box-shadow:none;}
+.card-label{
+  font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--text-3);margin-bottom:var(--s4);
+}
+
+/* =========================================================
+   ② VERDICT — 最上部の結論
+   ========================================================= */
+.verdict{
+  position:relative;overflow:hidden;
+  background:linear-gradient(170deg,#211e18 0%,#17161c 55%,#141419 100%);
+  border:1px solid var(--gold-line);
+  border-radius:var(--r-xl);
+  padding:var(--s7) var(--s5) var(--s6);
+  box-shadow:var(--shadow-hero);
+  text-align:center;
+}
+.verdict::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 70% at 50% -10%, rgba(216,189,131,0.13), transparent 62%);
+}
+.verdict-eyebrow{
+  position:relative;z-index:1;
+  font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:var(--s4);
+}
+.verdict-stars{
+  position:relative;z-index:1;
+  font-size:34px;line-height:1;letter-spacing:0.14em;margin-bottom:var(--s4);
+}
+.verdict-stars .on{color:var(--gold-bright);}
+.verdict-stars .off{color:#484857;}
+.verdict-word{
+  position:relative;z-index:1;
+  font-size:clamp(34px,10.5vw,50px);font-weight:800;letter-spacing:0.02em;line-height:1.1;
+  margin-bottom:var(--s3);
+}
+.verdict-word.is-good{color:var(--good);}
+.verdict-word.is-mild{color:var(--gold-bright);}
+.verdict-word.is-hold{color:var(--warn);}
+.verdict-word.is-bad{color:var(--bad);}
+.verdict-sub{
+  position:relative;z-index:1;
+  font-size:14px;color:var(--text-2);line-height:1.7;
+  max-width:34ch;margin:0 auto var(--s6);
+}
+.verdict-sub b{color:var(--text);font-weight:600;}
+
+/* 今買う理由 / 待つ理由 */
+.reason-split{
+  position:relative;z-index:1;
+  display:grid;gap:var(--s3);text-align:left;
+  border-top:1px solid rgba(255,255,255,0.07);padding-top:var(--s5);
+}
+@media (min-width:560px){ .reason-split{grid-template-columns:1fr 1fr;gap:var(--s4);} }
+.reason-col{
+  background:rgba(255,255,255,0.035);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:var(--s4);
+}
+.reason-col h4{
+  font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:var(--s3);display:flex;align-items:center;gap:7px;
+}
+.reason-col.go h4{color:var(--good);}
+.reason-col.wait h4{color:var(--warn);}
+.reason-col ul{list-style:none;}
+.reason-col li{
+  font-size:13.5px;line-height:1.6;color:var(--text-2);
+  padding-left:16px;position:relative;
+}
+.reason-col li + li{margin-top:var(--s2);}
+.reason-col li::before{
+  content:'';position:absolute;left:0;top:9px;
+  width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.5;
+}
+.reason-col.go li::before{background:var(--good);opacity:1;}
+.reason-col.wait li::before{background:var(--warn);opacity:1;}
+
+/* =========================================================
+   ③ KPI — 大きい数字のカード
+   ========================================================= */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
+@media (min-width:700px){ .kpi-grid{grid-template-columns:repeat(4,1fr);} }
+.kpi{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:var(--s4) var(--s4) var(--s5);
+  box-shadow:var(--shadow-card);
+  display:flex;flex-direction:column;justify-content:space-between;
+  min-height:132px;
+  position:relative;overflow:hidden;
+}
+.kpi::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--border-strong);
+}
+.kpi.tone-good::before{background:var(--good);}
+.kpi.tone-warn::before{background:var(--warn);}
+.kpi.tone-bad::before{background:var(--bad);}
+.kpi.tone-gold::before{background:var(--gold);}
+.kpi-k{font-size:11.5px;font-weight:600;letter-spacing:0.1em;color:var(--text-3);text-transform:uppercase;}
+.kpi-v{
+  font-size:clamp(30px,8.4vw,40px);font-weight:700;line-height:1.05;
+  margin-top:var(--s3);color:var(--text);
+}
+.kpi-v .u{font-size:0.42em;font-weight:500;color:var(--text-3);margin-left:3px;letter-spacing:0;}
+.kpi.tone-good .kpi-v{color:var(--good);}
+.kpi.tone-warn .kpi-v{color:var(--warn);}
+.kpi.tone-bad  .kpi-v{color:var(--bad);}
+.kpi.tone-gold .kpi-v{color:var(--gold-bright);}
+.kpi-note{font-size:11.5px;color:var(--text-3);margin-top:6px;line-height:1.5;}
+
+/* =========================================================
+   Controls — プリセット / トグル
+   ========================================================= */
+.preset-grid{display:grid;grid-template-columns:1fr;gap:var(--s2);}
+@media (min-width:520px){ .preset-grid{grid-template-columns:repeat(3,1fr);} }
+.preset{
+  min-height:64px;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;
+  padding:var(--s3) var(--s4);
+  background:var(--control);
+  border:1px solid var(--border-strong);
+  border-radius:var(--r-md);
+  transition:background 220ms var(--ease),border-color 220ms var(--ease),transform 160ms var(--ease);
+}
+.preset:active{transform:scale(0.985);}
+.preset-p{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.preset-p .u{font-size:12px;font-weight:500;color:var(--text-3);margin-left:3px;}
+.preset-d{font-size:11.5px;color:var(--text-3);line-height:1.4;}
+.preset.on{background:var(--gold-dim);border-color:var(--gold);}
+.preset.on .preset-p{color:var(--gold-bright);}
+.preset.on .preset-d{color:var(--gold);}
+
+.seg{display:flex;gap:var(--s1);padding:var(--s1);background:var(--inset);border:1px solid var(--border);border-radius:var(--r-md);}
+.seg button{
+  flex:1;min-height:46px;border-radius:calc(var(--r-md) - 4px);
+  font-size:14px;font-weight:600;color:var(--text-3);
+  transition:all 200ms var(--ease);
+}
+.seg button.on{background:var(--gold);color:#191400;font-weight:700;}
+
+/* =========================================================
+   Input panel
+   ========================================================= */
+.disclosure{
+  width:100%;min-height:58px;
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  padding:var(--s3) var(--s4);
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+  font-size:15px;font-weight:600;color:var(--text);
+  box-shadow:var(--shadow-card);
+  transition:background 200ms var(--ease);
+}
+.disclosure:active{background:var(--card-hover);}
+.disclosure-hint{font-size:12.5px;color:var(--text-3);font-weight:400;margin-left:auto;margin-right:var(--s2);}
+.disclosure svg{width:18px;height:18px;color:var(--gold);flex-shrink:0;transition:transform 300ms var(--ease);}
+.disclosure.open svg{transform:rotate(180deg);}
+.panel{display:none;margin-top:var(--s3);}
+.panel.open{display:block;}
+
+.fieldset + .fieldset{margin-top:var(--s6);}
+.fieldset-t{
+  font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);
+  padding-bottom:var(--s2);border-bottom:1px solid var(--hairline);margin-bottom:var(--s5);
+}
+.field + .field{margin-top:var(--s6);}
+.field-top{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s2);}
+.field-k{font-size:14.5px;font-weight:500;color:var(--text);}
+.field-v{font-size:19px;font-weight:700;color:var(--gold-bright);white-space:nowrap;}
+.field-v .u{font-size:12px;font-weight:500;color:var(--text-3);margin-left:2px;}
+.field-note{font-size:12px;color:var(--text-3);margin-top:var(--s2);line-height:1.55;}
+
+/* 見た目のトラックは6px、指で触れる範囲は44pxを確保 */
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:44px;
+  background:transparent;outline:none;
+  margin:var(--s2) 0 0;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:6px;border-radius:3px;background:var(--inset-2);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:28px;height:28px;border-radius:50%;margin-top:-11px;
+  background:linear-gradient(180deg,#f0dcae,#cfae72);
+  border:1px solid #7a6538;
+  box-shadow:0 2px 8px rgba(0,0,0,0.55);
+  cursor:pointer;
+}
+input[type=range]::-moz-range-track{
+  height:6px;border-radius:3px;background:var(--inset-2);border:none;
+}
+input[type=range]::-moz-range-thumb{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(180deg,#f0dcae,#cfae72);
+  border:1px solid #7a6538;box-shadow:0 2px 8px rgba(0,0,0,0.55);cursor:pointer;
+}
+.bounds{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-3);}
+
+/* =========================================================
+   ⑤ Table → Card rows (横スクロールを排除)
+   ========================================================= */
+.rows{display:flex;flex-direction:column;gap:var(--s2);}
+.row{
+  display:grid;align-items:center;gap:var(--s3);
+  grid-template-columns:auto 1fr auto;
+  padding:var(--s3) var(--s4);
+  background:var(--inset);
+  border:1px solid var(--hairline);
+  border-radius:var(--r-md);
+}
+.row.on{background:var(--gold-dim);border-color:var(--gold-line);}
+.row-k{font-size:14px;font-weight:700;color:var(--text);min-width:44px;}
+.row-m{font-size:12px;color:var(--text-3);line-height:1.45;}
+.row-v{font-size:15px;font-weight:700;text-align:right;white-space:nowrap;}
+.row-v.good{color:var(--good);} .row-v.warn{color:var(--warn);} .row-v.bad{color:var(--bad);}
+.row-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;padding:3px 9px;border-radius:var(--r-full);
+  border:1px solid transparent;white-space:nowrap;
+}
+.row-badge.good{color:var(--good);background:var(--good-dim);border-color:var(--good-line);}
+.row-badge.warn{color:var(--warn);background:var(--warn-dim);border-color:var(--warn-line);}
+.row-badge.bad{color:var(--bad);background:var(--bad-dim);border-color:var(--bad-line);}
+
+/* 判定カード（5年 / 10年） */
+.judge-grid{display:grid;grid-template-columns:1fr;gap:var(--s3);}
+@media (min-width:560px){ .judge-grid{grid-template-columns:1fr 1fr;} }
+.judge{
+  padding:var(--s5) var(--s4);
+  background:var(--inset);
+  border:1px solid var(--border);
+  border-left-width:3px;
+  border-radius:var(--r-md);
+}
+.judge.good{border-left-color:var(--good);background:linear-gradient(100deg,var(--good-dim),var(--inset) 55%);}
+.judge.warn{border-left-color:var(--warn);background:linear-gradient(100deg,var(--warn-dim),var(--inset) 55%);}
+.judge.bad {border-left-color:var(--bad); background:linear-gradient(100deg,var(--bad-dim),var(--inset) 55%);}
+.judge-t{font-size:12px;font-weight:600;letter-spacing:0.08em;color:var(--text-3);text-transform:uppercase;}
+.judge-r{font-size:26px;font-weight:800;margin:var(--s2) 0 var(--s3);letter-spacing:0.01em;}
+.judge.good .judge-r{color:var(--good);}
+.judge.warn .judge-r{color:var(--warn);}
+.judge.bad  .judge-r{color:var(--bad);}
+.judge-detail{display:flex;flex-direction:column;gap:5px;}
+.judge-line{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2);}
+.judge-line b{font-weight:700;color:var(--text);}
+
+/* Mini stat pairs */
+.pairs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
+.pair{background:var(--inset);border:1px solid var(--hairline);border-radius:var(--r-md);padding:var(--s4);}
+.pair-k{font-size:11.5px;color:var(--text-3);font-weight:600;letter-spacing:0.06em;}
+.pair-v{font-size:23px;font-weight:700;margin-top:5px;color:var(--text);}
+.pair-v .u{font-size:12px;font-weight:500;color:var(--text-3);margin-left:2px;}
+.pair-v.good{color:var(--good);} .pair-v.warn{color:var(--warn);}
+.pair-v.bad{color:var(--bad);} .pair-v.gold{color:var(--gold-bright);}
+
+/* =========================================================
+   ⑥ Chart
+   ========================================================= */
+.chart-box{position:relative;height:250px;margin-top:var(--s4);}
+.chart-box.tall{height:280px;}
+.chart-box canvas{max-width:100%;display:block;}
+/* Chart.js が読み込めなかった場合は空欄を残さない */
+.no-chart .chart-box{display:none;}
+.no-chart .legend{display:none;}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s4);margin-top:var(--s4);justify-content:center;}
+.legend span{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);}
+.legend i{width:14px;height:3px;border-radius:2px;display:block;}
+
+/* =========================================================
+   ⑦ 仕事への投資価値
+   ========================================================= */
+.invest-hero{display:flex;align-items:center;gap:var(--s4);margin-bottom:var(--s5);}
+.invest-score{
+  flex-shrink:0;width:76px;height:76px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid var(--gold);background:var(--gold-dim);
+}
+.invest-score b{font-size:26px;font-weight:800;color:var(--gold-bright);line-height:1;}
+.invest-score small{font-size:10px;color:var(--gold);letter-spacing:0.06em;}
+.invest-hero-t h3{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.invest-hero-t .stars{font-size:19px;letter-spacing:0.1em;color:var(--gold-bright);margin-top:2px;}
+.invest-hero-t p{font-size:12.5px;color:var(--text-3);margin-top:3px;}
+
+.bar-item + .bar-item{margin-top:var(--s4);}
+.bar-top{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);margin-bottom:7px;}
+.bar-k{font-size:14px;font-weight:600;color:var(--text);}
+.bar-s{font-size:13px;font-weight:700;color:var(--gold-bright);white-space:nowrap;}
+.bar-track{height:6px;border-radius:3px;background:var(--inset-2);overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#a8843f,var(--gold-bright));transform-origin:left;}
+.bar-d{font-size:12px;color:var(--text-3);margin-top:6px;line-height:1.55;}
+
+/* =========================================================
+   ⑨ 価格差の価値
+   ========================================================= */
+.vs-head{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--s3);
+  padding:var(--s4);background:var(--inset);border:1px solid var(--border);
+  border-radius:var(--r-md);margin-bottom:var(--s5);
+}
+.vs-side{text-align:center;}
+.vs-side .t{font-size:11.5px;color:var(--text-3);font-weight:600;letter-spacing:0.06em;}
+.vs-side .p{font-size:21px;font-weight:700;margin-top:3px;color:var(--text-2);}
+.vs-side.b .p{color:var(--gold-bright);}
+.vs-mid{font-size:12px;font-weight:700;color:var(--text-3);letter-spacing:0.08em;}
+
+.vs-row{display:grid;grid-template-columns:1fr auto;gap:var(--s3);align-items:center;padding:var(--s3) 0;}
+.vs-row + .vs-row{border-top:1px solid var(--hairline);}
+.vs-label{font-size:14px;font-weight:600;color:var(--text);}
+.vs-desc{font-size:11.5px;color:var(--text-3);line-height:1.5;margin-top:2px;}
+.vs-scores{display:flex;align-items:center;gap:var(--s3);}
+.vs-dots{display:flex;gap:3px;}
+.vs-dots i{width:8px;height:8px;border-radius:50%;background:#484857;display:block;}
+.vs-dots i.a{background:var(--neutral);}
+.vs-dots i.b{background:var(--gold-bright);}
+.vs-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.vs-tag{font-size:10px;color:var(--text-3);letter-spacing:0.08em;font-weight:600;}
+
+.verdict-strip{
+  margin-top:var(--s5);padding:var(--s5) var(--s4);
+  border-radius:var(--r-md);text-align:center;
+  border:1px solid var(--border);background:var(--inset);
+}
+.verdict-strip.good{border-color:var(--good-line);background:var(--good-dim);}
+.verdict-strip.warn{border-color:var(--warn-line);background:var(--warn-dim);}
+.verdict-strip.bad{border-color:var(--bad-line);background:var(--bad-dim);}
+.verdict-strip .q{font-size:12.5px;color:var(--text-3);letter-spacing:0.06em;}
+.verdict-strip .a{font-size:24px;font-weight:800;margin:var(--s2) 0;}
+.verdict-strip.good .a{color:var(--good);}
+.verdict-strip.warn .a{color:var(--warn);}
+.verdict-strip.bad .a{color:var(--bad);}
+.verdict-strip .why{font-size:13px;color:var(--text-2);line-height:1.65;max-width:40ch;margin:0 auto;}
+
+/* =========================================================
+   ⑧ 購入する / しない
+   ========================================================= */
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);}
+.ab{
+  padding:var(--s5) var(--s4);border-radius:var(--r-md);
+  border:1px solid var(--border);background:var(--inset);text-align:center;
+}
+.ab.pick{border-color:var(--gold-line);background:linear-gradient(170deg,rgba(216,189,131,0.12),var(--inset));}
+.ab .t{font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--text-3);}
+.ab .v{font-size:clamp(25px,7.4vw,32px);font-weight:800;margin-top:var(--s2);color:var(--text-2);}
+.ab.pick .v{color:var(--gold-bright);}
+.ab .n{font-size:11.5px;color:var(--text-3);margin-top:4px;}
+.delta-strip{
+  margin-top:var(--s3);padding:var(--s4);border-radius:var(--r-md);
+  background:var(--inset);border:1px solid var(--border);text-align:center;
+}
+.delta-strip .k{font-size:12px;color:var(--text-3);letter-spacing:0.06em;font-weight:600;}
+.delta-strip .v{font-size:27px;font-weight:800;margin-top:4px;}
+.delta-strip .n{font-size:12.5px;color:var(--text-2);margin-top:var(--s2);line-height:1.6;}
+
+/* =========================================================
+   ⑩ Timing
+   ========================================================= */
+.timing-grid{display:grid;grid-template-columns:1fr;gap:var(--s3);}
+@media (min-width:720px){ .timing-grid{grid-template-columns:repeat(3,1fr);} }
+.timing{
+  padding:var(--s5) var(--s4);border-radius:var(--r-md);
+  border:1px solid var(--border);background:var(--inset);
+}
+.timing.best{border-color:var(--gold-line);background:linear-gradient(170deg,rgba(216,189,131,0.11),var(--inset));}
+.timing-h{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);}
+.timing-h h4{font-size:16px;font-weight:700;color:var(--text);}
+.timing-badge{font-size:10px;font-weight:700;letter-spacing:0.1em;color:var(--gold);border:1px solid var(--gold-line);border-radius:var(--r-full);padding:2px 8px;}
+.timing-stars{font-size:17px;letter-spacing:0.1em;margin:var(--s2) 0;}
+.timing-stars .on{color:var(--gold-bright);} .timing-stars .off{color:#484857;}
+.timing-price{font-size:20px;font-weight:700;color:var(--text);}
+.timing-price .u{font-size:12px;color:var(--text-3);font-weight:500;margin-left:2px;}
+.timing-metrics{margin-top:var(--s4);display:flex;flex-direction:column;gap:var(--s3);}
+.tm{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s3);align-items:center;}
+.tm-k{font-size:12px;color:var(--text-3);min-width:64px;}
+.tm-track{height:5px;border-radius:3px;background:var(--inset-2);overflow:hidden;}
+.tm-fill{height:100%;border-radius:3px;}
+.tm-v{font-size:12px;font-weight:700;color:var(--text-2);min-width:26px;text-align:right;}
+
+/* =========================================================
+   ⑬ AI comment
+   ========================================================= */
+.ai{
+  background:linear-gradient(168deg,#1c1a17,#17171d 60%);
+  border:1px solid var(--gold-line);
+  border-radius:var(--r-xl);
+  padding:var(--s6) var(--s5);
+  box-shadow:var(--shadow-hero);
+}
+.ai-h{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s5);}
+.ai-avatar{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--gold-dim);border:1px solid var(--gold-line);
+}
+.ai-avatar svg{width:20px;height:20px;color:var(--gold-bright);}
+.ai-h .t{font-size:15px;font-weight:700;color:var(--text);}
+.ai-h .s{font-size:11.5px;color:var(--text-3);}
+.ai-body p{font-size:14.5px;line-height:1.95;color:var(--text-2);}
+.ai-body p + p{margin-top:var(--s4);}
+.ai-body b{color:var(--gold-bright);font-weight:700;}
+.ai-body .hl{color:var(--text);font-weight:600;}
+.ai-foot{
+  margin-top:var(--s5);padding-top:var(--s4);border-top:1px solid rgba(255,255,255,0.08);
+  font-size:12px;color:var(--text-3);line-height:1.6;
+}
+
+/* =========================================================
+   Footnote / misc
+   ========================================================= */
+.note{
+  display:flex;gap:var(--s3);align-items:flex-start;
+  padding:var(--s4);border-radius:var(--r-md);
+  background:var(--bg-elevated);border:1px solid var(--hairline);
+}
+.note svg{width:16px;height:16px;color:var(--gold);flex-shrink:0;margin-top:3px;}
+.note p{font-size:12px;color:var(--text-3);line-height:1.7;}
+.foot{text-align:center;padding:var(--s8) var(--s4) var(--s6);font-size:11.5px;color:var(--text-3);letter-spacing:0.04em;}
+
+.linkish{
+  width:100%;min-height:46px;font-size:13px;font-weight:600;color:var(--gold);
+  border:1px solid var(--border);border-radius:var(--r-md);margin-top:var(--s3);
+  background:var(--inset);
+}
+
+/* =========================================================
+   ⑫ Reveal animation (控えめ)
+   ========================================================= */
+.rv{opacity:0;transform:translateY(14px);}
+.rv.in{opacity:1;transform:none;transition:opacity 700ms var(--ease),transform 700ms var(--ease);}
+@media (prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none;}
+  .rv.in{transition:none;}
+  *{animation-duration:0.01ms !important;transition-duration:0.01ms !important;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-id">
+    <span class="topbar-mark">Lexus</span>
+    <span class="topbar-model">LC500h 購入判断</span>
+  </div>
+  <span class="topbar-pill" id="topPill"><i class="dot"></i><span id="topPillText">判定中</span></span>
+</header>
+
+<main class="wrap stack">
+
+  <!-- ================= ② 結論 ================= -->
+  <section class="verdict rv" id="verdict">
+    <div class="verdict-eyebrow">結論</div>
+    <div class="verdict-stars" id="vStars"></div>
+    <div class="verdict-word" id="vWord">計算中</div>
+    <p class="verdict-sub" id="vSub"></p>
+    <div class="reason-split">
+      <div class="reason-col go">
+        <h4>今買う理由</h4>
+        <ul id="vGo"></ul>
+      </div>
+      <div class="reason-col wait">
+        <h4>待つ理由</h4>
+        <ul id="vWait"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ③ KPI ================= -->
+  <section class="kpi-grid rv">
+    <div class="kpi tone-gold">
+      <div class="kpi-k">年間支払額</div>
+      <div>
+        <div class="kpi-v num" id="kYearly">–<span class="u">万円</span></div>
+        <div class="kpi-note" id="kYearlyNote">月々 + ボーナス年2回</div>
+      </div>
+    </div>
+    <div class="kpi" id="kRatioCard">
+      <div class="kpi-k">年収負担率</div>
+      <div>
+        <div class="kpi-v num" id="kRatio">–<span class="u">%</span></div>
+        <div class="kpi-note" id="kRatioNote">手取り年収に対する比率</div>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-k">借入額</div>
+      <div>
+        <div class="kpi-v num" id="kLoan">–<span class="u">万円</span></div>
+        <div class="kpi-note" id="kLoanNote">車両価格 − 頭金</div>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-k">頭金</div>
+      <div>
+        <div class="kpi-v num" id="kDown">–<span class="u">万円</span></div>
+        <div class="kpi-note" id="kDownNote">Q5売却 + 現金</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ① 車両価格 ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">Step 1</div>
+      <h2>車両価格</h2>
+      <p>候補をタップで切り替え。スライダーで微調整もできます。</p>
+    </div>
+    <div class="card">
+      <div class="preset-grid" id="presets">
+        <button class="preset" data-price="900"><span class="preset-p num">900<span class="u">万円</span></span><span class="preset-d">2020–23年式 / コスパ重視</span></button>
+        <button class="preset" data-price="1200"><span class="preset-p num">1,200<span class="u">万円</span></span><span class="preset-d">2024年 最終モデル</span></button>
+        <button class="preset on" data-price="1295"><span class="preset-p num">1,295<span class="u">万円</span></span><span class="preset-d">現在最有力</span></button>
+      </div>
+      <div class="field" style="margin-top:var(--s5)">
+        <div class="field-top"><span class="field-k">価格を微調整</span><span class="field-v num" id="fPrice">1,295<span class="u">万円</span></span></div>
+        <input type="range" id="price" min="500" max="1500" step="5" value="1295">
+        <div class="bounds"><span>500</span><span>1,500 万円</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 条件編集 ================= -->
+  <section class="rv">
+    <button class="disclosure" id="disc">
+      <span>資金・支払条件</span>
+      <span class="disclosure-hint" id="discHint"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="panel" id="panel">
+      <div class="card">
+
+        <div class="fieldset">
+          <div class="fieldset-t">頭金</div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">Q5売却額</span><span class="field-v num" id="fQ5">150<span class="u">万円</span></span></div>
+            <input type="range" id="q5sale" min="0" max="300" step="5" value="150">
+            <div class="bounds"><span>0</span><span>300 万円</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">現金頭金</span><span class="field-v num" id="fCash">100<span class="u">万円</span></span></div>
+            <input type="range" id="cashdown" min="0" max="600" step="10" value="100">
+            <div class="bounds"><span>0</span><span>600 万円</span></div>
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <div class="fieldset-t">ローン</div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">金利（年率）</span><span class="field-v num" id="fRate">4.5<span class="u">%</span></span></div>
+            <input type="range" id="rate" min="0.5" max="8" step="0.1" value="4.5">
+            <div class="bounds"><span>0.5</span><span>8.0 %</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">月々の支払</span><span class="field-v num" id="fMonthly">5.0<span class="u">万円</span></span></div>
+            <input type="range" id="monthly" min="1" max="25" step="0.5" value="5">
+            <div class="bounds"><span>1</span><span>25 万円</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">ボーナス払い（年2回）</span><span class="field-v num" id="fBonus">15<span class="u">万円/回</span></span></div>
+            <input type="range" id="bonus" min="0" max="80" step="1" value="15">
+            <div class="bounds"><span>0</span><span>80 万円</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">返済期間</span></div>
+            <div class="seg" id="segYears">
+              <button data-years="5">5年</button>
+              <button data-years="10" class="on">10年</button>
+            </div>
+            <div class="field-note" id="loanTermNote"></div>
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <div class="fieldset-t">リセール前提</div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">5年後リセール率</span><span class="field-v num" id="fResale">50<span class="u">%</span></span></div>
+            <input type="range" id="resaleRate" min="30" max="70" step="5" value="50">
+            <div class="bounds"><span>30</span><span>70 %</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">シナリオ</span></div>
+            <div class="seg" id="segScenario">
+              <button data-scenario="pess">悲観</button>
+              <button data-scenario="std" class="on">標準</button>
+              <button data-scenario="opt">楽観</button>
+            </div>
+            <div class="field-note">悲観 = 標準 −15pt / 楽観 = 標準 +15pt</div>
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <div class="fieldset-t">家計</div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">手取り年収</span><span class="field-v num" id="fIncome">700<span class="u">万円</span></span></div>
+            <input type="range" id="income" min="300" max="2000" step="10" value="700">
+            <div class="bounds"><span>300</span><span>2,000 万円</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">年間の貯蓄余力</span><span class="field-v num" id="fSavings">150<span class="u">万円</span></span></div>
+            <input type="range" id="savings" min="0" max="600" step="10" value="150">
+            <div class="field-note">車の支出を除いた、年間で貯蓄・投資に回せる額</div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">LC 年間維持費</span><span class="field-v num" id="fMaintLC">55<span class="u">万円</span></span></div>
+            <input type="range" id="maintLC" min="20" max="120" step="5" value="55">
+            <div class="field-note">税・保険・車検・整備・タイヤ・燃料の合計目安</div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">Q5 年間維持費</span><span class="field-v num" id="fMaintQ5">35<span class="u">万円</span></span></div>
+            <input type="range" id="maintQ5" min="10" max="80" step="5" value="35">
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <div class="fieldset-t">資産</div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">現在資産（合計）</span><span class="field-v num" id="fAssets">2,000<span class="u">万円</span></span></div>
+            <input type="range" id="assets" min="300" max="6000" step="50" value="2000">
+            <div class="bounds"><span>300</span><span>6,000 万円</span></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">現金比率</span><span class="field-v num" id="fCashPct">45<span class="u">%</span></span></div>
+            <input type="range" id="cashPct" min="0" max="100" step="5" value="45">
+            <div class="field-note" id="mixNote"></div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">投資リターン（年率）</span><span class="field-v num" id="fReturn">4.0<span class="u">%</span></span></div>
+            <input type="range" id="invReturn" min="0" max="8" step="0.5" value="4">
+          </div>
+        </div>
+
+        <div class="fieldset">
+          <div class="fieldset-t">タイミング</div>
+          <div class="field">
+            <div class="field-top"><span class="field-k">半年あたりの想定値下がり</span><span class="field-v num" id="fWait">15<span class="u">万円</span></span></div>
+            <input type="range" id="waitDrop" min="0" max="60" step="5" value="15">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 残価 vs リセール ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">Step 2</div>
+      <h2>残債 vs 想定リセール</h2>
+      <p>売却額が残債を上回れば、乗り換え時に持ち出しが出ません。</p>
+    </div>
+    <div class="card">
+      <div class="judge-grid">
+        <div class="judge" id="judge5">
+          <div class="judge-t">5年後</div>
+          <div class="judge-r" id="judge5R">–</div>
+          <div class="judge-detail">
+            <div class="judge-line"><span>想定売却額</span><b class="num" id="j5Value">–</b></div>
+            <div class="judge-line"><span>残債</span><b class="num" id="j5Debt">–</b></div>
+            <div class="judge-line"><span>差引</span><b class="num" id="j5Diff">–</b></div>
+          </div>
+        </div>
+        <div class="judge" id="judge10">
+          <div class="judge-t">10年後</div>
+          <div class="judge-r" id="judge10R">–</div>
+          <div class="judge-detail">
+            <div class="judge-line"><span>想定売却額</span><b class="num" id="j10Value">–</b></div>
+            <div class="judge-line"><span>残債</span><b class="num" id="j10Debt">–</b></div>
+            <div class="judge-line"><span>差引</span><b class="num" id="j10Diff">–</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="pairs" style="margin-top:var(--s3)">
+        <div class="pair"><div class="pair-k">5年間の利息</div><div class="pair-v bad num" id="pInt5">–<span class="u">万円</span></div></div>
+        <div class="pair"><div class="pair-k">10年間の利息</div><div class="pair-v bad num" id="pInt10">–<span class="u">万円</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= リセール率比較 ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">感度</div>
+      <h2>リセール率別の着地</h2>
+      <p>5年後、リセール率がどこに転んでも耐えられるかを確認します。</p>
+    </div>
+    <div class="card">
+      <div class="rows" id="resaleRows"></div>
+      <div class="chart-box"><canvas id="chartResale"></canvas></div>
+      <div class="legend">
+        <span><i style="background:#d8bd83"></i>想定売却額</span>
+        <span><i style="background:#5c5a54"></i>残債</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= シナリオ ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">最悪ケース</div>
+      <h2>3シナリオ</h2>
+      <p>相場が崩れた場合まで含めて、5年後の手残りを見ます。</p>
+    </div>
+    <div class="card">
+      <div class="rows" id="scenarioRows"></div>
+    </div>
+  </section>
+
+  <!-- ================= 10年推移 ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">長期</div>
+      <h2>10年間の推移</h2>
+      <p>車両価値と残債の交差点が、実質的な損益分岐です。</p>
+    </div>
+    <div class="card">
+      <div class="chart-box tall"><canvas id="chartTen"></canvas></div>
+      <div class="legend">
+        <span><i style="background:#d8bd83"></i>車両価値</span>
+        <span><i style="background:#e8705c"></i>残債</span>
+        <span><i style="background:#63c48a"></i>純資産</span>
+      </div>
+      <div class="rows" id="tenRows" style="margin-top:var(--s5)"></div>
+      <button class="linkish" id="tenToggle">全10年を表示</button>
+    </div>
+  </section>
+
+  <!-- ================= ⑦ 仕事への投資価値 ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">このダッシュボード最大の論点</div>
+      <h2>仕事への投資価値</h2>
+      <p>HPC / AI / UX・UI / 車両企画を担当する立場から見た、所有の実務価値。</p>
+    </div>
+    <div class="card card--gold">
+      <div class="invest-hero">
+        <div class="invest-score"><b id="invScore">–</b><small>/ 25</small></div>
+        <div class="invest-hero-t">
+          <h3>実務リターンは極めて高い</h3>
+          <div class="stars" id="invStars">★★★★★</div>
+          <p id="invNote">最新モデルほど一次情報としての価値が上がります</p>
+        </div>
+      </div>
+      <div id="invBars"></div>
+      <div class="note" style="margin-top:var(--s5)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <p>スコアは「最新モデル（2024年式）を基準に、年式が古いほど最新HMI・ADAS世代から離れる」前提で自動調整されます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ⑨ 価格差の価値 ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">核心の問い</div>
+      <h2>価格差 395万円の価値はあるか</h2>
+      <p>900万円車と1,295万円車を5つの軸で採点します。</p>
+    </div>
+    <div class="card">
+      <div class="vs-head">
+        <div class="vs-side a"><div class="t">2020–23年式</div><div class="p num">900<span style="font-size:12px">万</span></div></div>
+        <div class="vs-mid">VS</div>
+        <div class="vs-side b"><div class="t">2024 最終モデル</div><div class="p num">1,295<span style="font-size:12px">万</span></div></div>
+      </div>
+      <div id="vsRows"></div>
+      <div class="verdict-strip" id="vsVerdict">
+        <div class="q">395万円の価値はあるか</div>
+        <div class="a" id="vsAnswer">–</div>
+        <div class="why" id="vsWhy"></div>
+      </div>
+      <div class="pairs" style="margin-top:var(--s4)">
+        <div class="pair"><div class="pair-k">スコア差 1点あたり</div><div class="pair-v gold num" id="vsPerPoint">–<span class="u">万円</span></div></div>
+        <div class="pair"><div class="pair-k">10年総コスト差</div><div class="pair-v num" id="vsCostGap">–<span class="u">万円</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ⑧ 購入する / しない ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">機会費用</div>
+      <h2>買う場合と買わない場合</h2>
+      <p>Q5を継続保有した場合と比べ、10年後の純資産がどう変わるか。</p>
+    </div>
+    <div class="card">
+      <div class="ab-grid">
+        <div class="ab pick">
+          <div class="t">購入する</div>
+          <div class="v num" id="abBuy">–</div>
+          <div class="n">10年後の純資産</div>
+        </div>
+        <div class="ab">
+          <div class="t">購入しない</div>
+          <div class="v num" id="abSkip">–</div>
+          <div class="n">Q5を継続保有</div>
+        </div>
+      </div>
+      <div class="delta-strip" id="abDelta">
+        <div class="k">10年後の差</div>
+        <div class="v num" id="abGap">–</div>
+        <div class="n" id="abGapNote"></div>
+      </div>
+      <div class="chart-box tall"><canvas id="chartAsset"></canvas></div>
+      <div class="legend">
+        <span><i style="background:#d8bd83"></i>購入する</span>
+        <span><i style="background:#5c5a54"></i>購入しない</span>
+      </div>
+      <div class="rows" id="assetRows" style="margin-top:var(--s5)"></div>
+    </div>
+  </section>
+
+  <!-- ================= ⑩ タイミング ================= -->
+  <section class="rv">
+    <div class="sec-head">
+      <div class="sec-eyebrow">Step 3</div>
+      <h2>購入タイミング</h2>
+      <p>値下がり期待と、在庫が消えるリスクのトレードオフ。</p>
+    </div>
+    <div class="timing-grid" id="timingGrid"></div>
+  </section>
+
+  <!-- ================= ⑬ AIコメント ================= -->
+  <section class="rv">
+    <div class="ai">
+      <div class="ai-h">
+        <div class="ai-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 3l1.9 5.3L19 10l-5.1 1.7L12 17l-1.9-5.3L5 10l5.1-1.7z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="t">AI 総合コメント</div>
+          <div class="s" id="aiStamp">現在の条件にもとづく所見</div>
+        </div>
+      </div>
+      <div class="ai-body" id="aiBody"></div>
+      <div class="ai-foot">数値は入力条件から機械的に算出した概算です。最終判断は実車の状態と実際の見積りを確認のうえ行ってください。</div>
+    </div>
+  </section>
+
+  <div class="note rv">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <p>主要な前提：10年後の車両価値は「5年後残価 × 0.65」、投資資産は設定した年率で複利成長、現金は貯蓄余力から車の支出を差し引いた額が毎年積み上がる想定です。実際の査定額・金利・審査条件とは異なる場合があります。</p>
+  </div>
+
+  <div class="foot">LC500h Decision Dashboard</div>
+
+</main>
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   State
+   ========================================================= */
+const S = {
+  price:1295, q5sale:150, cashdown:100,
+  rate:4.5, monthly:5, bonus:15, loanYears:10,
+  resaleRate:50, scenario:'std',
+  income:700, savings:150, maintLC:55, maintQ5:35,
+  assets:2000, cashPct:45, invReturn:4,
+  waitDrop:15
+};
+
+const C = { gold:'#d8bd83', goldDim:'#6d5f42', gray:'#5c5a54', green:'#63c48a', red:'#e8705c',
+            grid:'#2e2e3a', tick:'#8d8b83' };
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+const n0 = v => (isFinite(v)?Math.round(v):0).toLocaleString('ja-JP');
+const n1 = v => (isFinite(v)?v:0).toLocaleString('ja-JP',{minimumFractionDigits:1,maximumFractionDigits:1});
+const sign = v => (v>=0?'+':'−') + n0(Math.abs(v));
+const yen = v => n0(v)+'<span class="u">万円</span>';
+
+/* =========================================================
+   Finance core
+   ========================================================= */
+function amortize(principal, ratePct, monthly, bonus, months){
+  const mr = ratePct/100/12;
+  let bal = principal, cumInt = 0;
+  const sched=[principal], paid=[0], intCum=[0];
+  let payoff = null, starving = false;
+  for(let m=1;m<=months;m++){
+    if(bal<=0){ sched.push(0); paid.push(0); intCum.push(cumInt); continue; }
+    const int = bal*mr;
+    let pay = monthly + (m%6===0 ? bonus : 0);
+    if(pay >= bal + int){ pay = bal + int; }
+    else if(pay <= int){ starving = true; }
+    cumInt += int;
+    bal = bal + int - pay;
+    if(bal <= 0.001){ bal = 0; if(payoff===null) payoff = m; }
+    if(bal > principal*4) bal = principal*4;
+    sched.push(bal); paid.push(pay); intCum.push(cumInt);
+  }
+  return {sched, paid, intCum, payoff, starving};
+}
+
+function vehicleValue(year, price, r5pct){
+  const r5 = clamp(r5pct,5,95)/100;
+  if(year<=0) return price;
+  if(year<=5) return price*Math.pow(r5, year/5);
+  return price*r5*Math.pow(0.65,(year-5)/5);
+}
+function q5Value(year, base){ return Math.max(base*Math.pow(0.87,year), Math.min(base,15)); }
+
+function scenRate(base, key){
+  if(key==='pess') return clamp(base-15,10,90);
+  if(key==='opt')  return clamp(base+15,10,90);
+  return base;
+}
+
+function judge(debt, value, price){
+  const diff = value - debt;
+  const th = Math.max(30, price*0.04);
+  if(diff >  th) return {cls:'good', mark:'🟢', label:'OK',  diff};
+  if(diff < -th) return {cls:'bad',  mark:'🔴', label:'NG',  diff};
+  return {cls:'warn', mark:'🟡', label:'注意', diff};
+}
+
+function model(price){
+  const down = S.q5sale + S.cashdown;
+  const principal = Math.max(price - down, 0);
+  const a = amortize(principal, S.rate, S.monthly, S.bonus, 121);
+  const yearly = S.monthly*12 + S.bonus*2;
+  const rUsed = scenRate(S.resaleRate, S.scenario);
+  const b5 = a.sched[60], b10 = a.sched[120];
+  const v5 = vehicleValue(5, price, rUsed), v10 = vehicleValue(10, price, rUsed);
+  const paidInYear = y => { let s=0; for(let m=(y-1)*12+1;m<=y*12;m++) s += (a.paid[m]||0); return s; };
+  const totalPaid10 = (()=>{ let s=0; for(let m=1;m<=120;m++) s += (a.paid[m]||0); return s; })();
+  return {
+    price, down, principal, yearly, a, rUsed,
+    b5, b10, v5, v10,
+    int5:a.intCum[60], int10:a.intCum[120],
+    j5:judge(b5,v5,price), j10:judge(b10,v10,price),
+    paidInYear, totalPaid10,
+    cost10: down + totalPaid10 + S.maintLC*10 + b10 - v10
+  };
+}
+
+/* =========================================================
+   Scores
+   ========================================================= */
+function tier(price){ return price>=1250?'new' : price>=1050?'mid' : 'old'; }
+
+function workScores(price){
+  const t = tier(price);
+  const pick = (a,b,c) => t==='new'?a : t==='mid'?b : c;
+  return [
+    {k:'UX研究',        s:pick(5,4,3), d:'最新世代のHMIレイアウト・情報設計を日常的に検証できる'},
+    {k:'ADAS研究',      s:pick(5,4,3), d:'Lexus Safety System+ の最新版挙動を実走行で観察できる'},
+    {k:'HMI研究',       s:pick(5,4,4), d:'物理スイッチ・音声・タッチの操作体系を長期で評価できる'},
+    {k:'Apple CarPlay', s:pick(5,5,4), d:'スマートフォン連携UXの実車検証環境が手元に常設される'},
+    {k:'車両企画への活用', s:pick(5,4,4), d:'競合ベンチマークの一次情報として企画資料に直接使える'}
+  ];
+}
+
+function vsAxes(mA, mB){
+  const resScore = m => clamp(3 + (m.v5-m.b5)/(m.price*0.10), 1, 5);
+  return [
+    {k:'安全装備', a:3, b:5, d:'2024年式は最新のLexus Safety System+世代'},
+    {k:'希少価値', a:3, b:5, d:'最終モデルは生産終了後に流通が細り希少性が上がりやすい'},
+    {k:'リセール', a:resScore(mA), b:resScore(mB), d:'5年後の売却額と残債の差から自動採点'},
+    {k:'満足度',   a:4, b:5, d:'内外装の仕上げと最新装備による日常の満足度'},
+    {k:'仕事への価値', a:3, b:5, d:'最新HMI・ADASを一次情報として扱えるか'}
+  ];
+}
+
+/* =========================================================
+   Charts
+   ========================================================= */
+let chResale=null, chTen=null, chAsset=null;
+const hasChart = () => typeof Chart !== 'undefined';
+
+const baseOpts = (yFmt) => ({
+  responsive:true, maintainAspectRatio:false,
+  interaction:{intersect:false, mode:'index'},
+  plugins:{
+    legend:{display:false},
+    tooltip:{
+      backgroundColor:'#2b2b37', borderColor:'#5a5a6b', borderWidth:1,
+      titleColor:'#f5f4f0', bodyColor:'#bcbab2', padding:12, cornerRadius:10,
+      displayColors:true, boxWidth:8, boxHeight:8, usePointStyle:true,
+      callbacks:{ label:c => ' '+c.dataset.label+'  '+n0(c.parsed.y)+' 万円' }
+    }
+  },
+  scales:{
+    x:{ grid:{display:false}, border:{display:false},
+        ticks:{color:C.tick, font:{size:11}, maxRotation:0, autoSkipPadding:14} },
+    y:{ grid:{color:C.grid}, border:{display:false},
+        ticks:{color:C.tick, font:{size:11}, maxTicksLimit:4,
+               callback:v => yFmt? yFmt(v) : n0(v)} }
+  }
+});
+
+function drawResale(labels, values, debts, curIdx){
+  if(!hasChart()) return;
+  const colors = values.map((_,i)=> i===curIdx ? C.gold : C.goldDim);
+  const data = {labels, datasets:[
+    {label:'想定売却額', data:values, backgroundColor:colors, borderRadius:6, borderSkipped:false, barPercentage:0.62, categoryPercentage:0.72},
+    {label:'残債',      data:debts,  backgroundColor:C.gray, borderRadius:6, borderSkipped:false, barPercentage:0.62, categoryPercentage:0.72}
+  ]};
+  if(chResale){ chResale.data = data; chResale.update('none'); return; }
+  chResale = new Chart($('chartResale'), {type:'bar', data, options:baseOpts()});
+}
+
+function drawTen(labels, v, d, net){
+  if(!hasChart()) return;
+  const pt = (arr,color) => arr.map((_,i)=> (i===5||i===10) ? 4 : 0);
+  const data = {labels, datasets:[
+    {label:'車両価値', data:v,   borderColor:C.gold,  backgroundColor:C.gold,  borderWidth:2.4, tension:0.35, pointRadius:pt(v), pointHoverRadius:5},
+    {label:'残債',     data:d,   borderColor:C.red,   backgroundColor:C.red,   borderWidth:2,   tension:0.35, pointRadius:pt(d), pointHoverRadius:5},
+    {label:'純資産',   data:net, borderColor:C.green, backgroundColor:C.green, borderWidth:2,   tension:0.35, pointRadius:pt(net), pointHoverRadius:5, borderDash:[5,4]}
+  ]};
+  if(chTen){ chTen.data = data; chTen.update('none'); return; }
+  chTen = new Chart($('chartTen'), {type:'line', data, options:baseOpts()});
+}
+
+function drawAsset(labels, buy, skip){
+  if(!hasChart()) return;
+  const data = {labels, datasets:[
+    {label:'購入する',   data:buy,  borderColor:C.gold, backgroundColor:'rgba(216,189,131,0.10)', borderWidth:2.6, tension:0.3, fill:true, pointRadius:buy.map((_,i)=> i===10?4:0), pointHoverRadius:5},
+    {label:'購入しない', data:skip, borderColor:C.gray, backgroundColor:'transparent', borderWidth:2, tension:0.3, borderDash:[5,4], pointRadius:skip.map((_,i)=> i===10?4:0), pointHoverRadius:5}
+  ]};
+  if(chAsset){ chAsset.data = data; chAsset.update('none'); return; }
+  chAsset = new Chart($('chartAsset'), {type:'line', data, options:baseOpts()});
+}
+
+/* =========================================================
+   Render
+   ========================================================= */
+let showAllYears = false;
+
+function render(){
+  const m = model(S.price);
+  const ratio = S.income>0 ? m.yearly/S.income*100 : 0;
+
+  /* ---- KPI ---- */
+  $('kYearly').innerHTML = yen(m.yearly);
+  $('kYearlyNote').textContent = `月 ${n1(S.monthly)}万 ×12 ＋ ボーナス ${n0(S.bonus)}万 ×2`;
+  $('kRatio').innerHTML = n1(ratio)+'<span class="u">%</span>';
+  const rTone = ratio<15?'good' : ratio<25?'gold' : ratio<35?'warn':'bad';
+  const rWord = ratio<15?'余裕あり' : ratio<25?'適正範囲' : ratio<35?'やや重い':'過大';
+  $('kRatioCard').className = 'kpi tone-'+rTone;
+  $('kRatioNote').textContent = `手取り ${n0(S.income)}万円に対し ${rWord}`;
+  $('kLoan').innerHTML = yen(m.principal);
+  $('kLoanNote').textContent = `金利 ${n1(S.rate)}% / 総利息 ${n0(m.int10)}万円`;
+  $('kDown').innerHTML = yen(m.down);
+  $('kDownNote').textContent = `Q5 ${n0(S.q5sale)}万 ＋ 現金 ${n0(S.cashdown)}万（頭金比 ${n0(m.down/S.price*100)}%）`;
+
+  /* ---- ローン期間の注記 ---- */
+  const termM = S.loanYears*12;
+  const balAtTerm = m.a.sched[termM] || 0;
+  let termNote;
+  if(m.principal <= 0){
+    termNote = 'ローン不要。頭金だけで全額をまかなえます。';
+  } else if(m.a.starving){
+    termNote = '支払額が利息を下回っており、残債が減りません。月々かボーナスを増やしてください。';
+  } else if(m.a.payoff && m.a.payoff<=termM){
+    termNote = `${Math.floor(m.a.payoff/12)}年${m.a.payoff%12}ヶ月で完済（設定期間内に完済）`;
+  } else if(balAtTerm < 0.5){
+    termNote = `${S.loanYears}年でちょうど完済する見込みです。`;
+  } else {
+    termNote = `${S.loanYears}年終了時に ${n0(balAtTerm)}万円 が残ります。最終回一括、または支払額の引き上げが必要です。`;
+  }
+  $('loanTermNote').textContent = termNote;
+  $('discHint').textContent = `${n0(m.down)}万 / ${n1(S.rate)}% / ${S.loanYears}年`;
+
+  /* ---- 残債 vs リセール ---- */
+  const setJudge = (cardId, resultId, pfx, j, val, debt) => {
+    $(cardId).className = 'judge '+j.cls;
+    $(resultId).textContent = j.mark+' '+j.label;
+    $(pfx+'Value').textContent = n0(val)+' 万円';
+    $(pfx+'Debt').textContent  = n0(debt)+' 万円';
+    $(pfx+'Diff').textContent  = sign(j.diff)+' 万円';
+  };
+  setJudge('judge5','judge5R','j5', m.j5, m.v5, m.b5);
+  setJudge('judge10','judge10R','j10', m.j10, m.v10, m.b10);
+  $('pInt5').innerHTML = yen(m.int5);
+  $('pInt10').innerHTML = yen(m.int10);
+
+  /* ---- リセール率別 ---- */
+  const rates=[30,40,50,60,70], rl=[], rv=[], rd=[];
+  const rowsEl = $('resaleRows'); rowsEl.innerHTML='';
+  let curIdx = rates.indexOf(S.resaleRate);
+  rates.forEach((r,i)=>{
+    const val = vehicleValue(5, S.price, r);
+    const j = judge(m.b5, val, S.price);
+    rl.push(r+'%'); rv.push(Math.round(val)); rd.push(Math.round(m.b5));
+    const el = document.createElement('div');
+    el.className = 'row' + (r===S.resaleRate?' on':'');
+    el.innerHTML =
+      `<span class="row-k num">${r}%</span>`+
+      `<span class="row-m">売却 ${n0(val)}万 − 残債 ${n0(m.b5)}万</span>`+
+      `<span class="row-v num ${j.cls}">${sign(j.diff)}<span style="font-size:11px;color:var(--text-3)"> 万</span></span>`;
+    rowsEl.appendChild(el);
+  });
+  drawResale(rl, rv, rd, curIdx);
+
+  /* ---- シナリオ ---- */
+  const scEl = $('scenarioRows'); scEl.innerHTML='';
+  [['悲観','pess'],['標準','std'],['楽観','opt']].forEach(([label,key])=>{
+    const r = scenRate(S.resaleRate,key);
+    const val = vehicleValue(5, S.price, r);
+    const j = judge(m.b5, val, S.price);
+    const el = document.createElement('div');
+    el.className='row'+(key===S.scenario?' on':'');
+    el.innerHTML =
+      `<span class="row-k">${label}</span>`+
+      `<span class="row-m">リセール ${r}% → 売却 ${n0(val)}万 / 手残り ${sign(j.diff)}万</span>`+
+      `<span class="row-badge ${j.cls}">${j.mark} ${j.label}</span>`;
+    scEl.appendChild(el);
+  });
+
+  /* ---- 10年推移 ---- */
+  const tl=[], tv=[], td=[], tn=[];
+  for(let y=0;y<=10;y++){
+    const v = vehicleValue(y, S.price, m.rUsed);
+    const d = m.a.sched[y*12] || 0;
+    tl.push(y===0?'今':y+'年'); tv.push(Math.round(v)); td.push(Math.round(d)); tn.push(Math.round(v-d));
+  }
+  drawTen(tl, tv, td, tn);
+  const tenEl = $('tenRows'); tenEl.innerHTML='';
+  const years = showAllYears ? [1,2,3,4,5,6,7,8,9,10] : [1,3,5,7,10];
+  years.forEach(y=>{
+    const v=tv[y], d=td[y], net=tn[y];
+    const el = document.createElement('div');
+    el.className = 'row' + (y===5||y===10 ? ' on':'');
+    el.innerHTML =
+      `<span class="row-k">${y}年</span>`+
+      `<span class="row-m">価値 ${n0(v)}万 / 残債 ${n0(d)}万</span>`+
+      `<span class="row-v num ${net>=0?'good':'bad'}">${sign(net)}<span style="font-size:11px;color:var(--text-3)"> 万</span></span>`;
+    tenEl.appendChild(el);
+  });
+  $('tenToggle').textContent = showAllYears ? '主要年のみ表示' : '全10年を表示';
+
+  /* ---- 仕事への投資価値 ---- */
+  const ws = workScores(S.price);
+  const wTotal = ws.reduce((a,b)=>a+b.s,0);
+  $('invScore').textContent = wTotal;
+  const wStars = Math.round(wTotal/5);
+  $('invStars').innerHTML = '★'.repeat(wStars) + '<span style="color:#484857">'+'★'.repeat(5-wStars)+'</span>';
+  $('invNote').textContent = tier(S.price)==='new'
+    ? '2024年最終モデル：最新HMI・ADAS世代をそのまま研究対象にできます'
+    : tier(S.price)==='mid'
+    ? '中期モデル：主要な最新装備は押さえつつ、一部は前世代です'
+    : '2020–23年式：最新世代のHMI・ADASからは一段離れます';
+  $('invBars').innerHTML = ws.map(w=>
+    `<div class="bar-item">
+       <div class="bar-top"><span class="bar-k">${w.k}</span><span class="bar-s">${w.s}.0 / 5</span></div>
+       <div class="bar-track"><div class="bar-fill" style="width:${w.s/5*100}%"></div></div>
+       <div class="bar-d">${w.d}</div>
+     </div>`).join('');
+
+  /* ---- 900 vs 1295 ---- */
+  const mA = model(900), mB = model(1295);
+  const axes = vsAxes(mA, mB);
+  const sumA = axes.reduce((a,x)=>a+x.a,0), sumB = axes.reduce((a,x)=>a+x.b,0);
+  const gap = sumB - sumA;
+  $('vsRows').innerHTML = axes.map(x=>{
+    const dots = (v,cls)=> Array.from({length:5},(_,i)=>`<i class="${i<Math.round(v)?cls:''}"></i>`).join('');
+    return `<div class="vs-row">
+      <div><div class="vs-label">${x.k}</div><div class="vs-desc">${x.d}</div></div>
+      <div class="vs-col">
+        <div class="vs-scores"><span class="vs-tag">900</span><span class="vs-dots">${dots(x.a,'a')}</span></div>
+        <div class="vs-scores"><span class="vs-tag" style="color:var(--gold)">1295</span><span class="vs-dots">${dots(x.b,'b')}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const perPoint = gap>0 ? 395/gap : 0;
+  $('vsPerPoint').innerHTML = (gap>0? n0(perPoint) : '–')+'<span class="u">万円</span>';
+  const costGap = mB.cost10 - mA.cost10;
+  $('vsCostGap').innerHTML = sign(costGap)+'<span class="u">万円</span>';
+  $('vsCostGap').className = 'pair-v num '+(costGap>0?'warn':'good');
+
+  const blockers = [];
+  if(ratio>=35) blockers.push(`年間支払が手取りの${n1(ratio)}%と重すぎる`);
+  else if(ratio>=25) blockers.push(`年間支払が手取りの${n1(ratio)}%とやや重い`);
+  if(m.j5.cls==='bad') blockers.push(`5年後に残債が売却額を${n0(Math.abs(m.j5.diff))}万円上回る`);
+  if(m.a.starving) blockers.push('支払額が利息に届いていない');
+
+  const scoreLine = `5軸合計は ${n1(sumA)} → ${n1(sumB)}、差は ${n1(gap)}ポイント（1ポイントあたり約${n0(perPoint)}万円）。`;
+  let vsCls, vsAns, vsWhy;
+  if(gap>=6 && blockers.length===0){
+    vsCls='good'; vsAns='YES — 払う価値がある';
+    vsWhy = scoreLine + '安全装備・希少性・仕事への還元で明確に上回り、家計面の障害もありません。';
+  } else if(gap>=6){
+    vsCls='warn'; vsAns='中身は十分。条件の調整が先';
+    vsWhy = scoreLine + `車としての差は納得できる水準ですが、${blockers[0]}点が残ります。頭金か支払額を見直せば解消できます。`;
+  } else if(gap>=4 && blockers.length===0){
+    vsCls='warn'; vsAns='価値はある。ただし差は控えめ';
+    vsWhy = scoreLine + '家計面の障害はありません。最終モデルにこだわりがあるなら妥当、価格を抑えたいなら900万円帯も十分に候補です。';
+  } else if(blockers.length>0){
+    vsCls='bad'; vsAns='現条件では900万円帯が無難';
+    vsWhy = scoreLine + `加えて ${blockers.join('、')}。まず支払条件を整えるのが先です。`;
+  } else {
+    vsCls='warn'; vsAns='差は小さい。900万円帯も有力';
+    vsWhy = scoreLine + '395万円の差に見合うほどの開きは出ていません。予算を抑える選択にも合理性があります。';
+  }
+  $('vsVerdict').className='verdict-strip '+vsCls;
+  $('vsAnswer').textContent = vsAns;
+  $('vsWhy').textContent = vsWhy;
+
+  /* ---- 購入する / しない ---- */
+  const liquid = Math.max(S.assets - S.q5sale, 0);
+  const cash0 = liquid*S.cashPct/100;
+  const inv0  = liquid - cash0;
+  $('mixNote').textContent = `現金 ${n0(cash0)}万 / 投資 ${n0(inv0)}万 / 車(Q5) ${n0(S.q5sale)}万`;
+  const gr = 1 + S.invReturn/100;
+
+  const buyNet=[], skipNet=[], labels=[];
+  let bCash = cash0 - S.cashdown, sCash = cash0;
+  for(let y=0;y<=10;y++){
+    if(y>0){
+      bCash += S.savings - m.paidInYear(y) - S.maintLC;
+      sCash += S.savings - S.maintQ5;
+    }
+    const bInv = inv0*Math.pow(gr,y), sInv = inv0*Math.pow(gr,y);
+    const bCar = y===0 ? S.price : vehicleValue(y, S.price, m.rUsed);
+    const sCar = q5Value(y, S.q5sale);
+    const bLoan = m.a.sched[y*12] || 0;
+    buyNet.push(Math.round(bCash + bInv + bCar - bLoan));
+    skipNet.push(Math.round(sCash + sInv + sCar));
+    labels.push(y===0?'今':y+'年');
+  }
+  $('abBuy').innerHTML  = n0(buyNet[10])+'<span style="font-size:12px;color:var(--text-3)"> 万円</span>';
+  $('abSkip').innerHTML = n0(skipNet[10])+'<span style="font-size:12px;color:var(--text-3)"> 万円</span>';
+  const abGap = buyNet[10]-skipNet[10];
+  $('abGap').innerHTML = sign(abGap)+'<span style="font-size:13px;color:var(--text-3)"> 万円</span>';
+  $('abGap').style.color = abGap>=0 ? 'var(--good)' : 'var(--bad)';
+  $('abGapNote').textContent = abGap>=0
+    ? 'LCを所有しても10年後の純資産は上回る見込みです。'
+    : `LCの所有コストとして10年で ${n0(Math.abs(abGap))}万円 を支払う計算です。年あたり約${n0(Math.abs(abGap)/10)}万円。`;
+  drawAsset(labels, buyNet, skipNet);
+
+  const aRows = $('assetRows'); aRows.innerHTML='';
+  [0,3,5,10].forEach(y=>{
+    const d = buyNet[y]-skipNet[y];
+    const el=document.createElement('div');
+    el.className='row'+(y===10?' on':'');
+    el.innerHTML =
+      `<span class="row-k">${y===0?'現在':y+'年'}</span>`+
+      `<span class="row-m">購入 ${n0(buyNet[y])}万 / 非購入 ${n0(skipNet[y])}万</span>`+
+      `<span class="row-v num ${d>=0?'good':'bad'}">${sign(d)}<span style="font-size:11px;color:var(--text-3)"> 万</span></span>`;
+    aRows.appendChild(el);
+  });
+
+  /* ---- タイミング ---- */
+  const scarce = S.price>=1250;
+  const dropHalf = clamp(Math.round(1 + S.waitDrop/15), 1, 5);
+  const dropYear = clamp(Math.round(1 + S.waitDrop/8), 1, 5);
+  const opts = [
+    {k:'今買う',   adj:0, stock: 5, drop:1, rare:5,
+      note: scarce?'最終モデルの個体を確実に押さえられる':'条件に合う個体を選べる状態'},
+    {k:'半年待つ', adj:-S.waitDrop, stock: scarce?2:3, drop:dropHalf, rare:3,
+      note:'相場は下がるが、希望仕様が抜ける可能性'},
+    {k:'1年待つ',  adj:-S.waitDrop*2, stock: scarce?1:2, drop:dropYear, rare:2,
+      note:'最も安く買えるが、良個体が残る保証はない'}
+  ];
+  opts.forEach(o=> o.total = o.stock + o.drop + o.rare);
+  const best = opts.reduce((a,b)=> b.total>a.total?b:a);
+  const barColor = v => v>=4?C.green : v>=3?C.gold : C.red;
+  $('timingGrid').innerHTML = opts.map(o=>{
+    const st = clamp(Math.round(o.total/3),1,5);
+    const metric = (k,v)=>`<div class="tm"><span class="tm-k">${k}</span>
+      <span class="tm-track"><span class="tm-fill" style="width:${v/5*100}%;background:${barColor(v)}"></span></span>
+      <span class="tm-v">${v}/5</span></div>`;
+    return `<div class="timing${o===best?' best':''}">
+      <div class="timing-h"><h4>${o.k}</h4>${o===best?'<span class="timing-badge">推奨</span>':''}</div>
+      <div class="timing-stars">${'<span class="on">★</span>'.repeat(st)}${'<span class="off">★</span>'.repeat(5-st)}</div>
+      <div class="timing-price num">${n0(S.price+o.adj)}<span class="u">万円</span></div>
+      <div class="timing-metrics">
+        ${metric('在庫確保', o.stock)}
+        ${metric('値下がり', o.drop)}
+        ${metric('希少性', o.rare)}
+      </div>
+      <div class="bar-d" style="margin-top:var(--s3)">${o.note}</div>
+    </div>`;
+  }).join('');
+
+  /* ---- 総合判定 ---- */
+  let score = 2.5;
+  if(m.j5.cls==='good') score += 1; else if(m.j5.cls==='bad') score -= 1;
+  if(ratio<15) score += 1; else if(ratio<25) score += 0.5; else if(ratio>=35) score -= 1;
+  if(m.j10.cls==='good') score += 0.5; else if(m.j10.cls==='bad') score -= 0.5;
+  if(S.price>=1250) score += 0.5;
+  if(S.loanYears===10) score += 0.25;
+  if(balAtTerm>0) score -= 0.5;
+  if(m.a.starving) score -= 1.5;
+  score = clamp(score,0,5);
+
+  const stars = Math.round(score);
+  $('vStars').innerHTML = '<span class="on">'+'★'.repeat(stars)+'</span><span class="off">'+'★'.repeat(5-stars)+'</span>';
+  let word, wcls, pillTone;
+  if(score>=4.2){ word='購入推奨'; wcls='is-good'; pillTone='var(--good)'; }
+  else if(score>=3.2){ word='やや推奨'; wcls='is-mild'; pillTone='var(--gold)'; }
+  else if(score>=2.2){ word='様子見'; wcls='is-hold'; pillTone='var(--warn)'; }
+  else { word='非推奨'; wcls='is-bad'; pillTone='var(--bad)'; }
+  $('vWord').textContent = word;
+  $('vWord').className = 'verdict-word '+wcls;
+  $('topPillText').textContent = word;
+  $('topPill').style.color = pillTone;
+  $('topPill').style.borderColor = pillTone;
+
+  $('vSub').innerHTML = `<b>${n0(S.price)}万円</b>／頭金 <b>${n0(m.down)}万円</b>／金利 <b>${n1(S.rate)}%</b>。`+
+    `年間支払 <b>${n0(m.yearly)}万円</b>（手取りの ${n1(ratio)}%）、`+
+    `5年後は残債より売却額が <b>${sign(m.j5.diff)}万円</b> の見込みです。`;
+
+  /* ---- 今買う理由 / 待つ理由 ---- */
+  const go=[], wait=[];
+  if(S.price>=1250) go.push('2024年最終モデルは生産終了後に希少性が上がりやすい');
+  if(m.j5.cls==='good') go.push(`5年後は売却額が残債を ${n0(m.j5.diff)}万円 上回る見込み`);
+  if(ratio<25) go.push(`年間支払は手取りの ${n1(ratio)}% で家計を圧迫しない`);
+  if(wTotal>=23) go.push('最新HMI・ADASを一次情報として業務に還元できる');
+  if(scarce) go.push('待つほど希望仕様の個体が抜けていく');
+  go.push('金利上昇局面では、待つほど総支払が増える可能性');
+
+  if(m.j5.cls==='bad') wait.push(`5年後に残債が売却額を ${n0(Math.abs(m.j5.diff))}万円 上回る`);
+  if(ratio>=25) wait.push(`年間支払が手取りの ${n1(ratio)}% と重い`);
+  if(balAtTerm>0) wait.push(`${S.loanYears}年後に ${n0(balAtTerm)}万円 の残債が残る`);
+  if(S.waitDrop>0) wait.push(`半年待てば ${n0(S.waitDrop)}万円 前後の値下がりが期待できる`);
+  if(abGap<0) wait.push(`10年で純資産は ${n0(Math.abs(abGap))}万円 少なくなる`);
+  wait.push('頭金を積み増せば利息と残債リスクを圧縮できる');
+
+  $('vGo').innerHTML   = go.slice(0,3).map(t=>`<li>${t}</li>`).join('');
+  $('vWait').innerHTML = wait.slice(0,3).map(t=>`<li>${t}</li>`).join('');
+
+  /* ---- AIコメント ---- */
+  renderAI(m, ratio, word, score, wTotal, gap, abGap, balAtTerm);
+}
+
+/* =========================================================
+   AI comment
+   ========================================================= */
+function renderAI(m, ratio, word, score, wTotal, gap, abGap, balAtTerm){
+  const P = [];
+  const priceLabel = S.price>=1250?'2024年の最終モデル' : S.price>=1050?'中期の高年式車':'2020〜23年式';
+
+  let p1 = `結論から言うと、いまの条件での判定は<b>「${word}」</b>です。`;
+  if(score>=4.2){
+    p1 += `${priceLabel}を ${n0(S.price)}万円、頭金 ${n0(m.down)}万円で組むこの形は、家計とリセールの両面でよく噛み合っています。迷う理由が数字の側にほとんど見当たりません。`;
+  } else if(score>=3.2){
+    p1 += `致命的な穴はありません。ただし、あと一手だけ整えると景色が変わります。以下の点を確認してから踏み切るのがおすすめです。`;
+  } else if(score>=2.2){
+    p1 += `いま決めきるには、引っかかる数字がいくつか残っています。買えないという意味ではなく、条件の組み直しで解決できる範囲です。`;
+  } else {
+    p1 += `現在の条件のままでは、数年後に苦しくなる可能性が高い構成です。価格帯か支払条件のどちらかを、先に見直したほうが安全です。`;
+  }
+  P.push(p1);
+
+  let p2 = '';
+  if(m.a.starving){
+    p2 = `まず最優先で直すべき点があります。<span class="hl">月々とボーナスの合計が利息に届いておらず、残債が減らない状態</span>です。支払額を引き上げるか、頭金を積み増してください。ここが解消されない限り、他の数字を見ても意味がありません。`;
+  } else {
+    p2 = `家計面では、年間支払 ${n0(m.yearly)}万円が手取り年収の <span class="hl">${n1(ratio)}%</span>。`;
+    if(ratio<15) p2 += `車にかける比率としてはかなり健全で、突発的な出費にも耐えられます。`;
+    else if(ratio<25) p2 += `一般に無理のない範囲とされる水準です。維持費 ${n0(S.maintLC)}万円を足しても許容できます。`;
+    else if(ratio<35) p2 += `やや重めです。維持費 ${n0(S.maintLC)}万円を加えると、年収の3割超が車に向かいます。`;
+    else p2 += `これは明確に重すぎます。他の支出を圧迫するので、支払期間か価格帯の見直しを勧めます。`;
+
+    p2 += ` 資産面では、`;
+    if(m.j5.cls==='good') p2 += `5年後の想定売却額が残債を <span class="hl">${n0(m.j5.diff)}万円</span> 上回ります。乗り換え時に持ち出しが出ず、次の一台の頭金にもなります。`;
+    else if(m.j5.cls==='warn') p2 += `5年後は売却額と残債がほぼ拮抗します（差 ${sign(m.j5.diff)}万円）。損はしないものの、相場が想定より崩れると持ち出しが出ます。`;
+    else p2 += `5年時点で残債が売却額を <span class="hl">${n0(Math.abs(m.j5.diff))}万円</span> 上回ります。この期間に手放す選択肢が実質的に消えるため、長期保有の覚悟が必要です。`;
+  }
+  P.push(p2);
+
+  let p3 = '';
+  if(S.price>=1250){
+    p3 = `価格差についても触れておきます。900万円帯との差 395万円に対し、5軸の評価差は <b>${n1(gap)}ポイント</b>。`;
+    p3 += gap>=6
+      ? `安全装備と希少性、そして仕事への還元価値でしっかり差がついており、金額に見合う中身があると判断できます。`
+      : `差はあるものの、金額ほどの開きとは言い切れません。900万円帯も候補に残しておく価値があります。`;
+    p3 += ` 加えて、業務価値は <b>${wTotal}/25</b>。最新HMIとADASを日常的に検証できる環境は、車両企画やUX検討の一次情報として代えがききません。`;
+  } else {
+    p3 = `いまの価格帯（${n0(S.price)}万円）は、コストパフォーマンスを重視した現実的な選択です。業務価値は <b>${wTotal}/25</b> で、最新世代からは一段離れますが、実用上の不足はありません。`;
+    p3 += ` 予算に余裕を作れるなら、2024年最終モデルとの比較も一度は見ておく価値があります。`;
+  }
+  P.push(p3);
+
+  let p4 = `10年で見ると、購入した場合の純資産は購入しない場合と比べて <b>${sign(abGap)}万円</b>。`;
+  p4 += abGap>=0
+    ? `車を持ちながら資産も維持できる計算です。`
+    : `年あたり約 ${n0(Math.abs(abGap)/10)}万円が、LCを所有するための実質コストになります。この金額を「趣味と仕事への投資」として納得できるかが、最後の分かれ目です。`;
+  if(balAtTerm>0 && !m.a.starving){
+    p4 += ` なお ${S.loanYears}年ローンでは終了時に ${n0(balAtTerm)}万円 が残ります。最終回一括の準備か、支払額の引き上げを検討してください。`;
+  }
+  P.push(p4);
+
+  $('aiBody').innerHTML = P.map(t=>`<p>${t}</p>`).join('');
+  $('aiStamp').textContent = `${n0(S.price)}万円 / 頭金${n0(m.down)}万円 / 金利${n1(S.rate)}% / ${S.loanYears}年 の条件`;
+}
+
+/* =========================================================
+   Bindings
+   ========================================================= */
+function bindRange(id, key, out, unit, dec){
+  const el = $(id);
+  if(!el) return;
+  el.addEventListener('input', ()=>{
+    S[key] = parseFloat(el.value);
+    if(out) $(out).innerHTML = (dec?n1(S[key]):n0(S[key]))+`<span class="u">${unit}</span>`;
+    if(key==='price') syncPresets();
+    render();
+  });
+}
+
+function syncPresets(){
+  document.querySelectorAll('#presets .preset').forEach(b=>{
+    b.classList.toggle('on', parseFloat(b.dataset.price)===S.price);
+  });
+}
+
+bindRange('price','price','fPrice','万円',false);
+bindRange('q5sale','q5sale','fQ5','万円',false);
+bindRange('cashdown','cashdown','fCash','万円',false);
+bindRange('rate','rate','fRate','%',true);
+bindRange('monthly','monthly','fMonthly','万円',true);
+bindRange('bonus','bonus','fBonus','万円/回',false);
+bindRange('resaleRate','resaleRate','fResale','%',false);
+bindRange('income','income','fIncome','万円',false);
+bindRange('savings','savings','fSavings','万円',false);
+bindRange('maintLC','maintLC','fMaintLC','万円',false);
+bindRange('maintQ5','maintQ5','fMaintQ5','万円',false);
+bindRange('assets','assets','fAssets','万円',false);
+bindRange('cashPct','cashPct','fCashPct','%',false);
+bindRange('invReturn','invReturn','fReturn','%',true);
+bindRange('waitDrop','waitDrop','fWait','万円',false);
+
+document.querySelectorAll('#presets .preset').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    S.price = parseFloat(btn.dataset.price);
+    $('price').value = S.price;
+    $('fPrice').innerHTML = n0(S.price)+'<span class="u">万円</span>';
+    syncPresets();
+    render();
+  });
+});
+
+document.querySelectorAll('#segYears button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    S.loanYears = parseInt(b.dataset.years,10);
+    document.querySelectorAll('#segYears button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    render();
+  });
+});
+document.querySelectorAll('#segScenario button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    S.scenario = b.dataset.scenario;
+    document.querySelectorAll('#segScenario button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    render();
+  });
+});
+
+$('disc').addEventListener('click', ()=>{
+  const open = $('panel').classList.toggle('open');
+  $('disc').classList.toggle('open', open);
+});
+
+$('tenToggle').addEventListener('click', ()=>{ showAllYears = !showAllYears; render(); });
+
+/* =========================================================
+   Reveal + Chart fallback
+   ========================================================= */
+if(!hasChart()) document.body.classList.add('no-chart');
+
+(function reveal(){
+  const items = Array.from(document.querySelectorAll('.rv'));
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce || typeof IntersectionObserver === 'undefined'){
+    items.forEach(el=>el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      const i = items.indexOf(e.target);
+      e.target.style.transitionDelay = Math.min(i,3)*70+'ms';
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    });
+  },{rootMargin:'0px 0px -8% 0px', threshold:0.06});
+  items.forEach(el=>io.observe(el));
+  // ファーストビューは即時
+  requestAnimationFrame(()=>{ items.slice(0,2).forEach((el,i)=>{ el.style.transitionDelay=i*90+'ms'; el.classList.add('in'); }); });
+})();
+
+render();
+
+})();
+</script>
+</body>
+</html>
